@@ -9,6 +9,7 @@ dependencies = [
     "django-restframework>=0.0.1",
     "drf-spectacular>=0.28.0",
     "drf-yasg>=1.21.10",
+    "pre-commit>=4.3.0",
 ]
 
 [dependency-groups]
