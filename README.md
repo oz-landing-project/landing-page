@@ -1,2 +1,3 @@
-![프로젝트 ERD](ERD.png)
+![프로젝트 ERD](image/ERD.png)
+
 
