@@ -1,1 +1,2 @@
-![Uploading Untitled_diagram___Mermaid_Chart-2025-08-27-042039.png…]()
+![프로젝트 ERD](ERD.png)
+
