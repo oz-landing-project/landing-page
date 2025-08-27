@@ -23,7 +23,7 @@ class Account(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='accounts',
+        related_name='account_accounts',  # ✅ related_name 고유화
         verbose_name='사용자'
     )
     account_number = models.CharField(max_length=50, db_index=True, verbose_name='계좌번호')
@@ -34,7 +34,7 @@ class Account(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일시')
 
     class Meta:
-        db_table = 'accounts'
+        db_table = 'accounts_account'  # ✅ 테이블명 고유화
         verbose_name = '계좌'
         verbose_name_plural = '계좌들'
         unique_together = ['user', 'account_number']
@@ -67,7 +67,12 @@ class TransactionHistory(models.Model):
         ('interest', '이자입금'),
     ]
 
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions', verbose_name='계좌')
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE,
+        related_name='account_transactions',  # ✅ related_name 고유화
+        verbose_name='계좌'
+    )
     amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='거래금액')
     balance_after = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='거래후잔액')
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES, verbose_name='거래유형')
@@ -78,7 +83,7 @@ class TransactionHistory(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일시')
 
     class Meta:
-        db_table = 'transaction_history'
+        db_table = 'accounts_transaction_history'  # ✅ 테이블명 고유화
         verbose_name = '거래내역'
         verbose_name_plural = '거래내역들'
         ordering = ['-transaction_date']
@@ -113,7 +118,12 @@ class Analysis(models.Model):
         ('custom', '사용자정의'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='analyses', verbose_name='사용자')
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='account_analyses',  # ✅ related_name 고유화
+        verbose_name='사용자'
+    )
     total_income = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), verbose_name='총수입')
     total_expense = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), verbose_name='총지출')
     savings_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), verbose_name='저축금액')
@@ -126,7 +136,7 @@ class Analysis(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일시')
 
     class Meta:
-        db_table = 'analysis'
+        db_table = 'accounts_analysis'  # ✅ 테이블명 고유화
         verbose_name = '분석'
         verbose_name_plural = '분석들'
         ordering = ['-created_at']
@@ -159,7 +169,12 @@ class Notification(models.Model):
         ('budget', '예산알림'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', verbose_name='사용자')
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='account_notifications',  # ✅ related_name 고유화
+        verbose_name='사용자'
+    )
     message = models.CharField(max_length=1000, verbose_name='메시지')
     notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, default='system', verbose_name='알림유형')
     is_read = models.BooleanField(default=False, db_index=True, verbose_name='읽음여부')
@@ -168,7 +183,7 @@ class Notification(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일시')
 
     class Meta:
-        db_table = 'notifications'
+        db_table = 'accounts_notifications'  # ✅ 테이블명 고유화
         verbose_name = '알림'
         verbose_name_plural = '알림들'
         ordering = ['-created_at']

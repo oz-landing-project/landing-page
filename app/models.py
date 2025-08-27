@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.core.validators import RegexValidator, EmailValidator
 from decimal import Decimal
 from django.utils import timezone
+from django.conf import settings
 
 
 class UserManager(BaseUserManager):
@@ -18,8 +19,15 @@ class UserManager(BaseUserManager):
         return user
    
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_admin', True)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("슈퍼유저는 is_staff=True 여야 합니다.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("슈퍼유저는 is_superuser=True 여야 합니다.")
+
         return self.create_user(email, password, **extra_fields)
 
 
@@ -61,9 +69,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=False,
         verbose_name='소셜 가입 여부'
     )
-    is_admin = models.BooleanField(
+    is_staff = models.BooleanField(
         default=False,
-        verbose_name='관리자 여부'
+        verbose_name='스태프 여부'
     )
     is_active = models.BooleanField(
         default=True,
@@ -98,10 +106,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.nickname} ({self.email})"
 
-    @property
-    def is_staff(self):
-        return self.is_admin
-
 
 class Account(models.Model):
     """계좌 모델"""
@@ -113,7 +117,7 @@ class Account(models.Model):
     ]
 
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='accounts',
         verbose_name='사용자'
@@ -258,7 +262,7 @@ class Analysis(models.Model):
     ]
 
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='analyses',
         verbose_name='사용자'
@@ -346,7 +350,7 @@ class Notification(models.Model):
     ]
 
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='notifications',
         verbose_name='사용자'
@@ -403,7 +407,7 @@ class Notification(models.Model):
             self.save(update_fields=['is_read', 'read_at', 'updated_at'])
 
 
-# 시그널 추가 (선택사항)
+# 시그널
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
