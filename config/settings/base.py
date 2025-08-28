@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     'app',
     'app.accounts',
     'app.accounts.constants',
+    'app.analysis',
 ]
 
 MIDDLEWARE = [
