@@ -5,8 +5,8 @@ from .models import Account, TransactionHistory
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        fields = ['id', 'account_number', 'bank_code', 'account_type', 'balance', 'created_at']
-        read_only_fields = ['id', 'balance', 'created_at']
+        fields = ['id', 'user', 'account_number', 'bank_code', 'account_type', 'balance', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'balance', 'created_at', 'updated_at']
 
 
 class TransactionHistorySerializer(serializers.ModelSerializer):
