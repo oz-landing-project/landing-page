@@ -73,7 +73,7 @@ class LoginView(CreateAPIView):
 
     @staticmethod
     def _get_client_ip(request):
-        """클라이언트 IP 주소 가져오기 - 정적 메서드로 변경"""
+        """클라이언트 IP 주소 가져오기"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
             ip = x_forwarded_for.split(',')[0]

@@ -22,11 +22,10 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
-    path('api/', include('accounts.urls')),
-    path('api/', include('analysis.urls')),
-    path('api/', include('notification.urls')),
+    path('api/', include('app.accounts.urls')),
+    path('api/', include('app.analysis.urls')),
+    path('api/', include('app.notification.urls')),
 ]
 
-# 미디어 파일 서빙 (개발 환경에서만)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
