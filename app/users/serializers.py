@@ -7,8 +7,6 @@ import re
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    """회원가입 시리얼라이저"""
-
     password = serializers.CharField(
         write_only=True,
         validators=[validate_password],
@@ -57,8 +55,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    """로그인 시리얼라이저"""
-
     email = serializers.EmailField()
     password = serializers.CharField(style={'input_type': 'password'})
 
@@ -78,13 +74,10 @@ class LoginSerializer(serializers.Serializer):
 
 
 class LogoutSerializer(serializers.Serializer):
-    """로그아웃 시리얼라이저"""
     pass
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    """프로필 시리얼라이저"""
-
     profile_image_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -113,4 +106,3 @@ class ProfileSerializer(serializers.ModelSerializer):
         if user and CustomUser.objects.filter(nickname=value).exclude(id=user.id).exists():
             raise serializers.ValidationError("이미 사용 중인 닉네임입니다.")
         return value
-

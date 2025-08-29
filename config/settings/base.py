@@ -18,10 +18,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'users',  # 사용자 앱
-    'accounts',  # 계좌 관리 앱
-    'analysis',  # 분석 앱
-    'notification',  # 알림 앱
+    'app.users',  # 루트에 있는 users
+    'app.accounts',  # app 폴더 안의 accounts
+    'app.analysis',  # app 폴더 안의 analysis
+    'app.notification',  # app 폴더 안의 notification
 ]
 
 MIDDLEWARE = [
@@ -55,17 +55,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', 'landing_project_db'),
-        'USER': os.getenv('DB_USER', 'joon'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'landing_project_db',
+        'USER': 'postgres',
+        'PASSWORD': '1234',
+        'HOST': 'localhost',
+        'PORT': '5433',
     }
 }
 
 # 🔥 수정: 하나의 사용자 모델만 지정
-AUTH_USER_MODEL = 'users.CustomUser'
+AUTH_USER_MODEL = 'app.users.CustomUser'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
