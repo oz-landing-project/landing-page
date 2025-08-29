@@ -8,4 +8,5 @@ router.register(r'transactions', TransactionHistoryViewSet, basename='transactio
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('api/', include('accounts.urls'))
 ]
