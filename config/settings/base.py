@@ -1,5 +1,4 @@
-#공통환경
-
+# 공통환경
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -13,6 +12,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',  # 추가
+    'users',  # 사용자 앱
     'app',
     'app.accounts',
     'app.accounts.constants',
@@ -50,14 +51,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # PostgreSQL 사용
-        'NAME': 'landing_project_db',               # 데이터베이스 이름
-        'USER': 'postgres',                         # PostgreSQL 사용자 이름
-        'PASSWORD': '@qwer@1',                      # PostgreSQL 비밀번호
-        'HOST': '127.0.0.1',                        # 로컬에서 실행 중이면 127.0.0.1
-        'PORT': '5432',                             # PostgreSQL 포트 번호
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# 🔥 수정: 하나의 사용자 모델만 지정
+AUTH_USER_MODEL = 'users.CustomUser'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -66,11 +66,24 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+# Django REST Framework 설정
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+LANGUAGE_CODE = 'ko-kr'  # 한국어로 변경
+TIME_ZONE = 'Asia/Seoul'  # 한국 시간대로 변경
 USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL = 'app.User'
+
+# 미디어 파일 설정 (프로필 이미지용)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

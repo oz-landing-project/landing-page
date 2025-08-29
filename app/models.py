@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.core.validators import RegexValidator, EmailValidator
 from decimal import Decimal
 from django.utils import timezone
@@ -8,16 +8,17 @@ from django.conf import settings
 
 class UserManager(BaseUserManager):
     """커스텀 유저 매니저"""
+
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('이메일은 필수입니다')
-       
+
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
-   
+
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
@@ -32,7 +33,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """유저 모델"""
+    """유저 모델 - 금융 앱용"""
     email = models.EmailField(
         max_length=255,
         unique=True,
@@ -88,14 +89,32 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     objects = UserManager()
-   
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['nickname', 'name']
 
+    # 충돌 해결을 위한 related_name 추가
+    groups = models.ManyToManyField(
+        Group,
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to.',
+        related_name="app_user_set",
+        related_query_name="app_user",
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="app_user_set",
+        related_query_name="app_user",
+    )
+
     class Meta:
-        db_table = 'users'
-        verbose_name = '사용자'
-        verbose_name_plural = '사용자들'
+        db_table = 'app_users'  # 'users' 대신 'app_users' 사용
+        verbose_name = '앱 사용자'
+        verbose_name_plural = '앱 사용자들'
         indexes = [
             models.Index(fields=['email']),
             models.Index(fields=['nickname']),
@@ -173,7 +192,7 @@ class TransactionHistory(models.Model):
         ('deposit', '입금'),
         ('withdrawal', '출금'),
     ]
-   
+
     DETAIL_TYPES = [
         ('deposit', '입금'),
         ('transfer', '계좌이체'),
@@ -410,6 +429,7 @@ class Notification(models.Model):
 # 시그널
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 
 @receiver(post_save, sender=TransactionHistory)
 def create_transaction_notification(sender, instance, created, **kwargs):
