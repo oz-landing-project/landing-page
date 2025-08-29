@@ -1,53 +1,33 @@
-from rest_framework import generics, status
+from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .models import TransactionHistory
-from .serializers import TransactionHistorySerializer
+from django.db.models import Q
+from .models import Account, TransactionHistory
+from .serializers import AccountSerializer, TransactionHistorySerializer
 
-# -------------------------
-# 일반 유저 전용 거래내역
-# -------------------------
-class UserTransactionHistoryView(generics.ListCreateAPIView):
-    serializer_class = TransactionHistorySerializer
-    permission_classes = [IsAuthenticated]
+
+class AccountViewSet(viewsets.ModelViewSet):
+    serializer_class = AccountSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # 로그인한 유저의 계좌에 속한 거래내역만 조회
-        return TransactionHistory.objects.filter(account__user=self.request.user)
+        return Account.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        # 새 거래내역 추가 시, 본인 계좌에만 추가 가능
-        account = serializer.validated_data["account"]
-        if account.user != self.request.user:
-            raise PermissionError("본인 계좌에만 거래내역을 추가할 수 있습니다.")
-        serializer.save()
-
-    def delete(self, request, *args, **kwargs):
-        transaction_id = request.data.get("id")
-        try:
-            transaction = TransactionHistory.objects.get(id=transaction_id, account__user=request.user)
-            transaction.delete()
-            return Response({"message": "삭제 성공"}, status=status.HTTP_204_NO_CONTENT)
-        except TransactionHistory.DoesNotExist:
-            return Response({"error": "거래내역이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+        serializer.save(user=self.request.user)
 
 
-# -------------------------
-# 관리자 전용 거래내역
-# -------------------------
-class AdminTransactionHistoryView(generics.ListCreateAPIView):
-    queryset = TransactionHistory.objects.all()
+class TransactionHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TransactionHistorySerializer
-    permission_classes = [IsAdminUser]  # ✅ 관리자만 접근 가능
+    permission_classes = [permissions.IsAuthenticated]
 
-    def delete(self, request, *args, **kwargs):
-        transaction_id = request.data.get("id")
-        try:
-            transaction = TransactionHistory.objects.get(id=transaction_id)
-            transaction.delete()
-            return Response({"message": "삭제 성공"}, status=status.HTTP_204_NO_CONTENT)
-        except TransactionHistory.DoesNotExist:
-            return Response({"error": "거래내역이 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+    def get_queryset(self):
+        user_accounts = Account.objects.filter(user=self.request.user)
+        return TransactionHistory.objects.filter(account__in=user_accounts)
 
-
-
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """최근 거래내역 조회"""
+        queryset = self.get_queryset()[:10]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

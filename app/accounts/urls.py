@@ -1,7 +1,11 @@
-from django.urls import path
-from .views import UserTransactionHistoryView, AdminTransactionHistoryView, AnalysisView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import AccountViewSet, TransactionHistoryViewSet
+
+router = DefaultRouter()
+router.register(r'accounts', AccountViewSet, basename='account')
+router.register(r'transactions', TransactionHistoryViewSet, basename='transaction')
 
 urlpatterns = [
-    path('api/transaction/', UserTransactionHistoryView.as_view(), name='user-transaction'),
-    path('api/transaction/admin/', AdminTransactionHistoryView.as_view(), name='admin-transaction'),
+    path('', include(router.urls)),
 ]
