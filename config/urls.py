@@ -22,7 +22,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
-    # 다른 앱 URL들도 추가
+    path('api/', include('accounts.urls')),
+    path('api/', include('analysis.urls')),
+    path('api/', include('notification.urls')),
 ]
 
 # 미디어 파일 서빙 (개발 환경에서만)

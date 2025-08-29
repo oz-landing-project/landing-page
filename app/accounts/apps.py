@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
 
-class AppConfig(AppConfig):
+class AccountsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'app'
+    name = 'accounts'
+    verbose_name = '계좌 관리'

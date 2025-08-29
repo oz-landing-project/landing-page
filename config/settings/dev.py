@@ -1,20 +1,17 @@
-#개발환경
-
+# 개발환경
+import os
 from .base import *
 
-DEBUG = True
-ALLOWED_HOSTS = []
-
-
-# config/settings/dev.py
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # 필수: PostgreSQL 사용
-        'NAME': 'landing_project_db',               # 데이터베이스 이름
-        'USER': 'postgres',                         # 사용자
-        'PASSWORD': '@qwer@1',                     # 비밀번호
-        'HOST': '127.0.0.1',                        # 또는 'localhost'
-        'PORT': '5432',                             # Postgres 포트
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', 'landing_project_db'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
