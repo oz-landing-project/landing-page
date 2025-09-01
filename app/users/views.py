@@ -2,25 +2,35 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.views import APIView
 from django.contrib.auth import login, logout
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 from django.middleware.csrf import get_token
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils.decorators import method_decorator
 from django.db import transaction
 from .models import CustomUser
 from .serializers import RegisterSerializer, LoginSerializer, LogoutSerializer, ProfileSerializer
 
 
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class CSRFTokenView(APIView):
+    """CSRF 토큰 발급 전용 엔드포인트"""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        csrf_token = get_token(request)
+        return Response({
+            'success': True,
+            'csrf_token': csrf_token
+        })
+
+
 class RegisterView(CreateAPIView):
-    """회원가입 뷰"""
+    """회원가입 뷰 - CSRF 보호 적용"""
 
     queryset = CustomUser.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
@@ -40,14 +50,10 @@ class RegisterView(CreateAPIView):
 
 
 class LoginView(CreateAPIView):
-    """로그인 뷰"""
+    """로그인 뷰 - CSRF 보호 적용"""
 
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -56,7 +62,7 @@ class LoginView(CreateAPIView):
         user = serializer.validated_data['user']
         login(request, user)
 
-        # CSRF 토큰 생성
+        # 새로운 CSRF 토큰 생성 (로그인 후 보안상 토큰 갱신)
         csrf_token = get_token(request)
 
         # 로그인 정보 업데이트
@@ -78,17 +84,17 @@ class LoginView(CreateAPIView):
 
     @staticmethod
     def _get_client_ip(request):
-        """클라이언트 IP 주소 가져오기 - 정적 메서드로 변경"""
+        """클라이언트 IP 주소 가져오기"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
+            ip = x_forwarded_for.split(',')[0].strip()
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
 
 
 class LogoutView(CreateAPIView):
-    """로그아웃 뷰"""
+    """로그아웃 뷰 - CSRF 보호 적용"""
 
     serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
@@ -102,7 +108,7 @@ class LogoutView(CreateAPIView):
 
 
 class ProfileView(RetrieveUpdateDestroyAPIView):
-    """프로필 뷰 (조회, 수정, 삭제)"""
+    """프로필 뷰 (조회, 수정, 삭제) - CSRF 보호 적용"""
 
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated]
