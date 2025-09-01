@@ -1,0 +1,29 @@
+Django==5.2.5
+djangorestframework==3.16.1
+
+# Database
+psycopg2-binary==2.9.10
+
+# Media files (images)
+Pillow==11.3.0
+
+# API documentation
+drf-spectacular==0.28.0
+drf-yasg==1.21.10
+
+# Utilities
+pytz==2025.2
+PyYAML==6.0.2
+uritemplate==4.2.0
+inflection==0.5.1
+jsonschema==4.25.1
+jsonschema-specifications==2025.4.1
+referencing==0.36.2
+rpds-py==0.27.0
+attrs==25.3.0
+packaging==25.0
+
+# Django dependencies
+asgiref==3.9.1
+sqlparse==0.5.3
+tzdata==2025.2 ; sys_platform == "win32"
