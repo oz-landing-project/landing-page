@@ -25,3 +25,4 @@ class NotificationViewSet(viewsets.ModelViewSet):
         unread_notifications = self.get_queryset().filter(is_read=False)
         serializer = self.get_serializer(unread_notifications, many=True)
         return Response(serializer.data)
+    1
