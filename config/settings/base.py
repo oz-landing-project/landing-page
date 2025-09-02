@@ -1,5 +1,6 @@
 # config/settings/base.py
 from pathlib import Path
+from dotenv import load_dotenv
 import os
 
 # --- dotenv을 선택적으로 로드 (prod에서는 없어도 에러 X) --------------------
