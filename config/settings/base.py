@@ -1,18 +1,28 @@
 # config/settings/base.py
 from pathlib import Path
 import os
-from dotenv import load_dotenv
 
-# .env 로드 (프로젝트 루트)
+# --- dotenv을 선택적으로 로드 (prod에서는 없어도 에러 X) --------------------
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
+# 프로젝트 루트
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-load_dotenv(BASE_DIR / ".env")
 
+# 로컬(dev)에서만 .env 로드: DJANGO_ENV=prod 가 아니고, load_dotenv 가 있을 때
+if load_dotenv and os.getenv("DJANGO_ENV", "").lower() != "prod":
+    load_dotenv(BASE_DIR / ".env")
+
+# 시크릿 키
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-b3k(+600_pauf*u18ibuv!($*efb+wv+var$bk!6)cym%ve@4r')
 
 # 기본 플래그
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
 
+# 앱
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -29,6 +39,7 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
+# 미들웨어
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',          # CORS는 위쪽
     'django.middleware.security.SecurityMiddleware',
@@ -60,10 +71,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# 데이터베이스
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DB_NAME', str(BASE_DIR / 'db.PostgreSQL')),
+        # 로컬 기본 파일명 오타 수정: db.sqlite3
+        'NAME': os.getenv('DB_NAME', str(BASE_DIR / 'db.sqlite3')),
         'USER': os.getenv('DB_USER', ''),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
@@ -111,22 +124,22 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
-    
+
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
     'AUDIENCE': None,
     'ISSUER': None,
-    
+
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
-    
+
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
-    
+
     'JTI_CLAIM': 'jti',
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
     'SLIDING_TOKEN_LIFETIME': timedelta(hours=1),
