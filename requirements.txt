@@ -16,3 +16,4 @@ python-dotenv==1.0.1
 
 setuptools>=65.0.0
 
+drf-spectacular==0.28.0
