@@ -1,24 +1,16 @@
-# 공통환경
+# config/settings/base.py
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-from django.conf.urls.static import static
-import logging
-from logging import FileHandler, StreamHandler
 
-
-
-# .env 파일 로드
-load_dotenv()
-
+# .env 로드 (프로젝트 루트)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-b3k(+600_pauf*u18ibuv!($*efb+wv+var$bk!6)cym%ve@4r')
 
-# DEBUG 설정
+# 기본 플래그
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
-
-# ALLOWED_HOSTS 설정
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 INSTALLED_APPS = [
@@ -29,24 +21,24 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # 프로젝트 앱들
+    # 프로젝트 앱
     'app.users.apps.UsersConfig',
     'app.accounts.apps.AccountsConfig',
     'app.analysis.apps.AnalysisConfig',
     'app.notification.apps.NotificationConfig',
 
-    # 외부 패키지들
+    # 외부 패키지
     'rest_framework',
     'drf_yasg',
-    'corsheaders',  # CORS 처리용 (필요시)
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # CORS 미들웨어 (가장 위에)
+    'corsheaders.middleware.CorsMiddleware',          # CORS는 위쪽
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF 미들웨어 활성화
+    'django.middleware.csrf.CsrfViewMiddleware',      # Admin 등 폼 보호용
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -58,7 +50,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
-        'APP_DIRS': True,
+        'APP_DIRS': True,   # 앱 템플릿 사용
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
@@ -71,25 +63,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# 데이터베이스 설정
+# DB: 기본 sqlite, 환경변수로 교체 가능
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+        'NAME': os.getenv('DB_NAME', str(BASE_DIR / 'db.sqlite3')),
         'USER': os.getenv('DB_USER', ''),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
         'PORT': os.getenv('DB_PORT', ''),
     }
 }
-
-# PostgreSQL 사용시 NAME 경로 처리
+# PostgreSQL 등 다른 엔진이면 NAME 보정
 if DATABASES['default']['ENGINE'] != 'django.db.backends.sqlite3':
     DATABASES['default']['NAME'] = os.getenv('DB_NAME', 'landing_project_db')
 
-# 커스텀 사용자 모델
+# 커스텀 유저
 AUTH_USER_MODEL = 'users.CustomUser'
 
+# 비밀번호 정책
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -97,11 +89,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Django REST Framework 설정
+# DRF (세션/토큰 그대로 사용)
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',  # 토큰 인증 추가
+        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -113,90 +105,78 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
-# CSRF 보안 설정
-CSRF_COOKIE_SECURE = not DEBUG  # HTTPS에서만 쿠키 전송 (프로덕션)
-CSRF_COOKIE_HTTPONLY = False  # JavaScript에서 접근 가능하도록
+# CSRF (Admin/세션 사용 시 유효)
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_USE_SESSIONS = False  # 쿠키 기반 CSRF 토큰 사용
+CSRF_USE_SESSIONS = False
 CSRF_COOKIE_NAME = 'csrftoken'
-
-# 신뢰할 수 있는 오리진 설정
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
-    'http://localhost:3000',  # React 개발 서버
+    'http://localhost:3000',
 ]
 
-# 세션 보안 설정
+# 세션 쿠키
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_AGE = 86400  # 24시간
+SESSION_COOKIE_AGE = 86400  # 24h
 
-# 보안 헤더 설정
+# 보안 헤더
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-# CORS 설정 (개발 환경용)
+# CORS (개발용)
 if DEBUG:
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
     ]
     CORS_ALLOW_CREDENTIALS = True
 
-# 언어 및 시간대 설정
-LANGUAGE_CODE = 'ko-kr'
-TIME_ZONE = 'Asia/Seoul'
-USE_I18N = True
-USE_TZ = True
-
-# 정적 파일 설정
+# 정적/미디어
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
-
-# 미디어 파일 설정
+STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# 로깅 설정
+# ===== 로깅: logs 폴더 보장 + 안전한 파일 핸들러 =====
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)  # ← 폴더 자동 생성
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
+        'verbose': {'format': '[{asctime}] {levelname} {name}:{lineno} {message}', 'style': '{'},
+        'simple':  {'format': '{levelname} {message}', 'style': '{'},
     },
+
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'formatter': 'verbose',
-        },
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-    },
-    'root': {
-        'handlers': ['console', 'file'] if DEBUG else ['file'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'file'] if DEBUG else ['file'],
             'level': 'INFO',
-            'propagate': False,
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'INFO',
+            'formatter': 'verbose',
+            'filename': str(LOG_DIR / 'django.log'),  # ← 문자열로 캐스팅(호환성)
+            'maxBytes': 10 * 1024 * 1024,
+            'backupCount': 5,
+            'encoding': 'utf-8',
         },
     },
+
+    # 파일 핸들러 문제 나도 서버가 뜨도록 콘솔 포함
+    'root': {'handlers': ['console', 'file'], 'level': 'INFO'},
+    'loggers': {'django': {'handlers': ['console', 'file'], 'level': 'INFO', 'propagate': False}},
 }
