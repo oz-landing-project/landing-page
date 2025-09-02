@@ -1,0 +1,87 @@
+EC2 서버 배포 가이드 (현재 프로젝트 구조 기준)
+
+EC2에서 바로 실행하기
+
+1. 서버에서 실행할 명령어들
+1. 저장소 클론
+git clone [레포주소]
+cd [프로젝트경로]
+
+2. uv 설치 (Ubuntu 기준)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+
+3. PostgreSQL 설치 및 설정
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+4. 데이터베이스 생성
+sudo -u postgres createdb landing_project_db
+sudo -u postgres createuser --interactive
+
+5. 환경변수 설정
+cp .env.example .env
+.env 파일 수정 (아래 참고)
+
+6. 의존성 설치 및 실행
+uv sync
+source .venv/bin/activate
+python manage.py makemigrations
+python manage.py migrate
+python manage.py collectstatic --noinput
+
+Gunicorn으로 실행
+gunicorn --bind 0.0.0.0:8000 --workers 4 config.wsgi:application
+
+
+.env 파일 설정 (EC2용) (your부분 확인하세요)
+
+DEBUG=False
+SECRET_KEY=your-new-secret-key-here
+ALLOWED_HOSTS=your-ec2-ip,your-domain.com,localhost
+
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=landing_project_db
+DB_USER=your_postgres_user
+DB_PASSWORD=your_postgres_password
+DB_HOST=localhost
+DB_PORT=5432
+
+
+백그라운드 실행 (nohup 사용)
+
+백그라운드에서 실행
+nohup gunicorn --bind 0.0.0.0:8000 --workers 4 config.wsgi:application > gunicorn.log 2>&1 &
+
+프로세스 확인
+ps aux | grep gunicorn
+
+종료하려면
+pkill -f gunicorn
+
+EC2 보안그룹 설정
+- 인바운드 규칙에 포트 8000 추가 (HTTP)
+- 소스: 0.0.0.0/0 (모든 IP 허용) 또는 특정 IP만
+
+
+1. PostgreSQL 연결 실패시
+sudo systemctl status postgresql
+sudo -u postgres psql -c "ALTER USER your_user PASSWORD 'your_password';"
+
+2. 포트 8000이 이미 사용중일 때
+sudo lsof -i :8000
+pkill -f gunicorn
+
+3. 권한 문제
+chmod +x deploy.sh
+sudo chown -R $USER:$USER /path/to/project
+
+4. 로그 확인
+tail -f gunicorn.log
+tail -f logs/django.log
+
+
+- API 문서: http://your-ec2-ip:8000/api/schema/swagger-ui/
+- Admin: http://your-ec2-ip:8000/admin/

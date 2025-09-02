@@ -1,17 +1,18 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from decimal import Decimal
+from .constants import BANK_CODE, ACCOUNT_TYPES, TRANSACTION_TYPES, TRANSACTION_METHOD
 
 
 class Account(models.Model):
-    """계좌 모델"""
-    ACCOUNT_TYPES = [
-        ('checking', '일반예금'),
-        ('savings', '적금'),
-        ('loan', '마이너스통장'),
-        ('deposit', '정기예금'),
-    ]
-
+    """
+    계좌 모델
+    
+    사용자의 은행 계좌 정보를 관리합니다.
+    필요에 따라 필드를 추가할 수 있습니다.
+    """
+    # 기본 정보
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -19,35 +20,45 @@ class Account(models.Model):
         verbose_name='사용자'
     )
     account_number = models.CharField(
+        '계좌번호',
         max_length=50,
-        db_index=True,
-        verbose_name='계좌번호'
+        db_index=True
+    )
+    account_name = models.CharField(
+        '계좌명',
+        max_length=100,
+        help_text='사용자가 지정한 계좌 별칭'
     )
     bank_code = models.CharField(
+        '은행코드',
         max_length=10,
-        verbose_name='은행코드'
+        choices=BANK_CODE
     )
     account_type = models.CharField(
+        '계좌유형',
         max_length=20,
         choices=ACCOUNT_TYPES,
-        verbose_name='계좌유형'
+        default='CHECKING'
     )
+    
+    # 잔액 정보
     balance = models.DecimalField(
-        max_digits=12,
+        '잔액',
+        max_digits=15,
         decimal_places=2,
         default=Decimal('0.00'),
-        db_index=True,
-        verbose_name='잔액'
+        validators=[MinValueValidator(Decimal('0.00'))],
+        db_index=True
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='생성일시'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='수정일시'
-    )
-
+    
+    # 계좌 상태
+    is_active = models.BooleanField('활성 상태', default=True)
+    is_primary = models.BooleanField('주계좌 여부', default=False)
+    
+    # 타임스탬프
+    created_at = models.DateTimeField('생성일시', auto_now_add=True)
+    updated_at = models.DateTimeField('수정일시', auto_now=True)
+    
     class Meta:
         db_table = 'accounts'
         verbose_name = '계좌'
@@ -56,74 +67,96 @@ class Account(models.Model):
             models.Index(fields=['user', 'account_number']),
             models.Index(fields=['account_number']),
             models.Index(fields=['balance']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['created_at']),
         ]
         unique_together = ['user', 'account_number']
-
+    
     def __str__(self):
-        return f"{self.user.nickname}의 {self.get_account_type_display()} ({self.account_number})"
+        return f"{self.user.nickname}의 {self.account_name} ({self.get_bank_code_display()})"
+    
+    def save(self, *args, **kwargs):
+        # 첫 번째 계좌는 자동으로 주계좌로 설정
+        if not self.pk and not self.user.accounts.exists():
+            self.is_primary = True
+        super().save(*args, **kwargs)
 
 
 class TransactionHistory(models.Model):
-    """거래내역 모델"""
-    TRANSACTION_TYPES = [
-        ('deposit', '입금'),
-        ('withdrawal', '출금'),
-    ]
-
-    DETAIL_TYPES = [
-        ('deposit', '입금'),
-        ('transfer', '계좌이체'),
-        ('auto_transfer', '자동이체'),
-        ('card_payment', '카드결제'),
-        ('atm_withdrawal', 'ATM출금'),
-        ('interest', '이자입금'),
-    ]
-
+    """
+    거래내역 모델
+    
+    계좌의 모든 거래 내역을 기록합니다.
+    필요에 따라 필드를 추가할 수 있습니다.
+    """
+    # 기본 정보
     account = models.ForeignKey(
         Account,
         on_delete=models.CASCADE,
         related_name='transactions',
         verbose_name='계좌'
     )
+    
+    # 거래 정보
     amount = models.DecimalField(
-        max_digits=12,
+        '거래금액',
+        max_digits=15,
         decimal_places=2,
-        verbose_name='거래금액'
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
     balance_after = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        verbose_name='거래후잔액'
-    )
-    transaction_detail = models.CharField(
-        max_length=500,
-        null=True, blank=True,
-        verbose_name='거래내역상세'
+        '거래후잔액',
+        max_digits=15,
+        decimal_places=2
     )
     transaction_type = models.CharField(
+        '거래유형',
         max_length=20,
-        choices=TRANSACTION_TYPES,
-        verbose_name='거래유형'
+        choices=TRANSACTION_TYPES
     )
     detail_type = models.CharField(
+        '상세유형',
         max_length=50,
-        choices=DETAIL_TYPES,
-        null=True, blank=True,
-        verbose_name='상세유형'
+        choices=TRANSACTION_METHOD,
+        null=True,
+        blank=True
     )
+    
+    # 거래 상세
+    description = models.CharField(
+        '거래내역',
+        max_length=200,
+        help_text='거래 설명'
+    )
+    memo = models.TextField(
+        '메모',
+        max_length=500,
+        blank=True,
+        help_text='사용자 메모'
+    )
+    
+    # 상대방 정보 (이체 시)
+    counterpart_account = models.CharField(
+        '상대방계좌',
+        max_length=50,
+        blank=True
+    )
+    counterpart_name = models.CharField(
+        '상대방명',
+        max_length=100,
+        blank=True
+    )
+    
+    # 거래 일시
     transaction_date = models.DateTimeField(
-        db_index=True,
-        verbose_name='거래일시'
+        '거래일시',
+        db_index=True
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='생성일시'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='수정일시'
-    )
-
+    
+    # 타임스탬프
+    created_at = models.DateTimeField('생성일시', auto_now_add=True)
+    updated_at = models.DateTimeField('수정일시', auto_now=True)
+    
     class Meta:
         db_table = 'transaction_history'
         verbose_name = '거래내역'
@@ -133,15 +166,17 @@ class TransactionHistory(models.Model):
             models.Index(fields=['account', 'transaction_date']),
             models.Index(fields=['transaction_date']),
             models.Index(fields=['transaction_type']),
+            models.Index(fields=['detail_type']),
             models.Index(fields=['created_at']),
         ]
-
+    
     def __str__(self):
-        return f"{self.account.user.nickname} - {self.get_transaction_type_display()} {self.amount}원"
-
+        return f"{self.account.account_name} - {self.get_transaction_type_display()} {self.amount:,}원"
+    
     def save(self, *args, **kwargs):
-        """거래내역 저장시 계좌 잔액 업데이트"""
+        """거래내역 저장 시 계좌 잔액 업데이트"""
         if not self.pk:  # 새로운 거래내역인 경우
+            # 계좌 잔액 업데이트
             self.account.balance = self.balance_after
             self.account.save(update_fields=['balance', 'updated_at'])
         super().save(*args, **kwargs)

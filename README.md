@@ -1,18 +1,20 @@
-# 실행 방법
+구현 필요한 부분
+1. Serializers (회원가입, 로그인, 프로필, 계좌, 거래내역)
+2. Views (API 엔드포인트 로직)
+3. URL 패턴 연결
+4. 마이그레이션 실행 (새롭게 작성했기 때문에 마이그레이션 파일 새롭게 받으셔야겠죠?)
+= 제가 해놨기 때문에 여러분들은 이걸 이용해서 디비에 연동만 하시면 됩니다.
+= 이 부분 직접 검색하고 공부하시면서 사용하세요 마이그레이션이 새롭게 되어 있기 때문에 기존 db에 업데이트만 하면 됩니다.
 
-## 0. 포스트그래스@15버전 설치!!!!!!!!!!
-brew install postgresql@15
-brew services start postgresql@15
+구현해야 할 API들
 
-## 1. 환경 설정
-```bash
-cp .env.example .env
-# .env 파일에서 DB_USER를 본인 사용자명으로 변경 (whoami 명령어로 확인)
-```
+Users 앱 (drf사용하실거죠?)
+1. 회원가입, 로그인, 로그아웃
+2. 프로필 조회/수정
+3. JWT 토큰 갱신
+4. Accounts 앱:
 
-## 2. 서버 실행
-```bash
-chmod +x scripts/run.sh && ./scripts/run.sh
-```
-
-
+account 앱 (drf사용하실거죠?)
+1. 계좌 CRUD
+2. 주계좌 설정
+3. 거래내역 조회/통계

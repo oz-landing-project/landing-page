@@ -20,16 +20,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # 프로젝트 앱
     'app.users.apps.UsersConfig',
     'app.accounts.apps.AccountsConfig',
-    'app.analysis.apps.AnalysisConfig',
-    'app.notification.apps.NotificationConfig',
-
-    # 외부 패키지
     'rest_framework',
-    'drf_yasg',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
     'corsheaders',
 ]
 
@@ -37,7 +33,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',          # CORS는 위쪽
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',     # WhiteNoise 추가
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',  # Admin 페이지용
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',      # Admin 등 폼 보호용
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -51,7 +47,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
-        'APP_DIRS': True,   # 앱 템플릿 사용
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
@@ -64,11 +60,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# DB: 기본 sqlite, 환경변수로 교체 가능
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DB_NAME', str(BASE_DIR / 'db.sqlite3')),
+        'NAME': os.getenv('DB_NAME', str(BASE_DIR / 'db.PostgreSQL')),
         'USER': os.getenv('DB_USER', ''),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
@@ -90,11 +85,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# DRF (세션/토큰 그대로 사용)
+# DRF 설정
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -105,6 +100,37 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# JWT 설정
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    
+    'JTI_CLAIM': 'jti',
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(hours=1),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
 }
 
 # CSRF (Admin/세션 사용 시 유효)
@@ -151,72 +177,33 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Django 기본 로그인 URL 설정
-LOGIN_URL = '/api/users/login/'
-LOGIN_REDIRECT_URL = '/api/docs/'
-LOGOUT_REDIRECT_URL = '/api/docs/'
+LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/api/schema/swagger-ui/'
+LOGOUT_REDIRECT_URL = '/api/schema/swagger-ui/'
 
-# Swagger 설정
-SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'Token': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header'
-        },
-        'Session': {
-            'type': 'apiKey',
-            'name': 'sessionid',
-            'in': 'cookie'
-        }
-    },
-    'USE_SESSION_AUTH': True,
-    'JSON_EDITOR': True,
-    'SUPPORTED_SUBMIT_METHODS': [
-        'get',
-        'post',
-        'put',
-        'delete',
-        'patch'
-    ],
-    'OPERATIONS_SORTER': 'alpha',
-    'TAGS_SORTER': 'alpha',
-    'DOC_EXPANSION': 'none',
-    'DEEP_LINKING': True,
-    'SHOW_EXTENSIONS': True,
-    'SHOW_COMMON_EXTENSIONS': True,
+# DRF Spectacular 설정 (OpenAPI 3.0)
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Landing Page API',
+    'DESCRIPTION': 'Landing Page API Documentation - 가계부 관리 시스템',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
 }
 
-# ===== 로깅: logs 폴더 보장 + 안전한 파일 핸들러 =====
-LOG_DIR = BASE_DIR / "logs"
-LOG_DIR.mkdir(parents=True, exist_ok=True)  # ← 폴더 자동 생성
-
+# ===== 로깅: 콘솔만 사용 (파일 로그 비활성화) =====
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-
-    'formatters': {
-        'verbose': {'format': '[{asctime}] {levelname} {name}:{lineno} {message}', 'style': '{'},
-        'simple':  {'format': '{levelname} {message}', 'style': '{'},
-    },
-
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'level': 'INFO',
-            'formatter': 'simple',
-        },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'level': 'INFO',
-            'formatter': 'verbose',
-            'filename': str(LOG_DIR / 'django.log'),  # ← 문자열로 캐스팅(호환성)
-            'maxBytes': 10 * 1024 * 1024,
-            'backupCount': 5,
-            'encoding': 'utf-8',
+            'level': 'WARNING',  # WARNING 이상만 출력
         },
     },
-
-    # 파일 핸들러 문제 나도 서버가 뜨도록 콘솔 포함
-    'root': {'handlers': ['console', 'file'], 'level': 'INFO'},
-    'loggers': {'django': {'handlers': ['console', 'file'], 'level': 'INFO', 'propagate': False}},
+    'root': {'handlers': ['console'], 'level': 'WARNING'},
+    'loggers': {
+        'django': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'django.request': {'handlers': ['console'], 'level': 'ERROR', 'propagate': False},
+    },
 }
