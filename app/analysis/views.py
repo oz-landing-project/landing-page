@@ -30,6 +30,9 @@ class AnalysisView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        # Swagger 스키마 생성 시 AnonymousUser 처리
+        if getattr(self, 'swagger_fake_view', False):
+            return Analysis.objects.none()
         return Analysis.objects.filter(user=self.request.user).order_by("-created_at")
 
     def get_serializer_class(self):
@@ -75,6 +78,9 @@ class AnalysisDetailView(RetrieveAPIView):
     serializer_class = AnalysisSerializer
 
     def get_queryset(self):
+        # Swagger 스키마 생성 시 AnonymousUser 처리
+        if getattr(self, 'swagger_fake_view', False):
+            return Analysis.objects.none()
         return Analysis.objects.filter(user=self.request.user)
 
     @swagger_auto_schema(

@@ -18,6 +18,9 @@ class AccountViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Swagger 스키마 생성 시 AnonymousUser 처리
+        if getattr(self, 'swagger_fake_view', False):
+            return Account.objects.none()
         return Account.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
@@ -34,6 +37,9 @@ class TransactionHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Swagger 스키마 생성 시 AnonymousUser 처리
+        if getattr(self, 'swagger_fake_view', False):
+            return TransactionHistory.objects.none()
         user_accounts = Account.objects.filter(user=self.request.user)
         return TransactionHistory.objects.filter(account__in=user_accounts)
 
