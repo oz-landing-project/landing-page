@@ -22,6 +22,14 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+# API URL 패턴들을 먼저 정의
+api_urlpatterns = [
+    path('analysis/', include('app.analysis.urls')),
+    path('accounts/', include('app.accounts.urls')),
+    path('users/', include('app.users.urls')),
+    path('notifications/', include('app.notification.urls')),
+]
+
 schema_view = get_schema_view(
    openapi.Info(
       title="Landing Page API",
@@ -30,21 +38,13 @@ schema_view = get_schema_view(
    ),
    public=True,
    permission_classes=[permissions.AllowAny],
-   patterns=[
-       path('api/analysis/', include('app.analysis.urls')),
-       path('api/accounts/', include('app.accounts.urls')),
-       path('api/users/', include('app.users.urls')),
-       path('api/notifications/', include('app.notification.urls')),
-   ],
+   patterns=[path('api/', include(api_urlpatterns))],
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # API 엔드포인트들을 api/ 하위로 통합
-    path('api/analysis/', include('app.analysis.urls')),
-    path('api/accounts/', include('app.accounts.urls')),
-    path('api/users/', include('app.users.urls')),
-    path('api/notifications/', include('app.notification.urls')),
+    # API 엔드포인트들
+    path('api/', include(api_urlpatterns)),
     # API 문서
     path('api/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('api/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
