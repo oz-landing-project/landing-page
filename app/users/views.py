@@ -8,6 +8,8 @@ from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from django.db import transaction
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from .models import CustomUser
 from .serializers import RegisterSerializer, LoginSerializer, LogoutSerializer, ProfileSerializer
 
@@ -17,6 +19,19 @@ class CSRFTokenView(APIView):
     """CSRF 토큰 발급 전용 엔드포인트"""
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="CSRF 토큰 발급",
+        responses={200: openapi.Response(
+            description="CSRF 토큰",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'success': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    'csrf_token': openapi.Schema(type=openapi.TYPE_STRING),
+                }
+            )
+        )}
+    )
     def get(self, request):
         csrf_token = get_token(request)
         return Response({
@@ -32,6 +47,28 @@ class RegisterView(CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="회원가입",
+        request_body=RegisterSerializer,
+        responses={201: openapi.Response(
+            description="회원가입 성공",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'success': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'user_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'email': openapi.Schema(type=openapi.TYPE_STRING),
+                            'nickname': openapi.Schema(type=openapi.TYPE_STRING),
+                        }
+                    )
+                }
+            )
+        )}
+    )
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
             serializer = self.get_serializer(data=request.data)
@@ -55,6 +92,30 @@ class LoginView(CreateAPIView):
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="로그인",
+        request_body=LoginSerializer,
+        responses={200: openapi.Response(
+            description="로그인 성공",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'success': openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'user_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'username': openapi.Schema(type=openapi.TYPE_STRING),
+                            'nickname': openapi.Schema(type=openapi.TYPE_STRING),
+                            'email': openapi.Schema(type=openapi.TYPE_STRING),
+                            'csrf_token': openapi.Schema(type=openapi.TYPE_STRING),
+                        }
+                    )
+                }
+            )
+        )}
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -19,6 +19,6 @@ app_path = BASE_DIR / 'app'
 if str(app_path) not in sys.path:
     sys.path.insert(0, str(app_path))
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.prod')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 application = get_wsgi_application()

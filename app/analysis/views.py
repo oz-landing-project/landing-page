@@ -2,6 +2,8 @@ from rest_framework.generics import ListCreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from app.analysis.models import Analysis
 from app.analysis.serializers import (
@@ -20,6 +22,8 @@ except Exception:
 
 class AnalysisView(ListCreateAPIView):
     """
+    분석 관리 API
+    
     GET: 내 분석 목록 조회
     POST: 분석 실행 & 저장
     """
@@ -45,6 +49,18 @@ class AnalysisView(ListCreateAPIView):
                 ctx["transactions"] = qs
         return ctx
 
+    @swagger_auto_schema(
+        operation_description="분석 목록 조회",
+        responses={200: AnalysisSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="새로운 분석 실행",
+        request_body=AnalysisExecuteSerializer,
+        responses={201: AnalysisSerializer}
+    )
     def create(self, request, *args, **kwargs):
         s = self.get_serializer(data=request.data)
         s.is_valid(raise_exception=True)
@@ -54,9 +70,16 @@ class AnalysisView(ListCreateAPIView):
 
 
 class AnalysisDetailView(RetrieveAPIView):
-    """단건 조회"""
+    """분석 상세 조회"""
     permission_classes = [IsAuthenticated]
     serializer_class = AnalysisSerializer
 
     def get_queryset(self):
         return Analysis.objects.filter(user=self.request.user)
+
+    @swagger_auto_schema(
+        operation_description="분석 상세 정보 조회",
+        responses={200: AnalysisSerializer}
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
