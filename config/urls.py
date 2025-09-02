@@ -29,7 +29,7 @@ schema_view = get_schema_view(
       description="Landing Page API Documentation",
    ),
    public=True,
-   permission_classes=[permissions.AllowAny],  # list로 변경
+   permission_classes=(permissions.AllowAny,),
 )
 
 urlpatterns = [
