@@ -1,9 +1,8 @@
-# config/settings/base.py
+# config/settings/base.py  (상단 전체 교체)
 from pathlib import Path
-from dotenv import load_dotenv
 import os
 
-# --- dotenv을 선택적으로 로드 (prod에서는 없어도 에러 X) --------------------
+# 배포(Render)에서 python-dotenv가 없어도 에러 안 나게 선택적 import
 try:
     from dotenv import load_dotenv
 except ImportError:
@@ -12,7 +11,7 @@ except ImportError:
 # 프로젝트 루트
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# 로컬(dev)에서만 .env 로드: DJANGO_ENV=prod 가 아니고, load_dotenv 가 있을 때
+# 로컬(dev)에서만 .env 로드: DJANGO_ENV=prod 가 아니고, 라이브러리가 있을 때만
 if load_dotenv and os.getenv("DJANGO_ENV", "").lower() != "prod":
     load_dotenv(BASE_DIR / ".env")
 
