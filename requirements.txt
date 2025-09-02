@@ -13,3 +13,6 @@ Pillow==11.3.0
 
 # .env를 로컬(dev)에서만 읽게 바꿨다면 생략 가능하지만, 둘 다 쓰려면 포함
 python-dotenv==1.0.1
+
+setuptools>=65.0.0
+
