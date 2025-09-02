@@ -30,6 +30,12 @@ schema_view = get_schema_view(
    ),
    public=True,
    permission_classes=[permissions.AllowAny],
+   patterns=[
+       path('api/analysis/', include('app.analysis.urls')),
+       path('api/accounts/', include('app.accounts.urls')),
+       path('api/users/', include('app.users.urls')),
+       path('api/notifications/', include('app.notification.urls')),
+   ],
 )
 
 urlpatterns = [
