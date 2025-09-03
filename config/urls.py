@@ -8,8 +8,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # API 엔드포인트들
-    path('api/accounts/', include('app.accounts.urls')),
-    path('api/users/', include('app.users.urls')),
+    path('api/accounts/', include('accounts.urls')),
+    path('api/users/', include('users.urls')),
     
     # API 문서 (DRF Spectacular)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
